@@ -48,13 +48,13 @@
         "listen": "test",
         "script": {
           "exec": [
-            "pm.test('Status 200', () => pm.response.to.have.status(200));",
-            "const json = pm.response.json();",
-            "pm.test('Body echoed contains product', () => {",
-            "  pm.expect(json.data).to.include('chips-ananas');",
-            "});"
-          ],
-          "type": "text/javascript"
+  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+  "const json = pm.response.json();",
+  "pm.test('Body echoed contains product', () => {",
+  "  pm.expect(json.json.product).to.eql('chips-ananas');",
+  "});"
+],
+"type": "text/javascript"
         }
       }]
     }
