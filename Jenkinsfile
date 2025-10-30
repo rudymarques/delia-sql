@@ -1,13 +1,15 @@
 pipeline {
   agent any
   options { ansiColor('xterm'); timestamps() }
-  tools { nodejs 'node18-lts' } // doit matcher le nom défini dans Manage Jenkins > Tools
+  // Le nom doit correspondre à l'outil Node configuré dans Jenkins > Manage Jenkins > Tools
+  tools { nodejs 'node18-lts' }
 
   stages {
     stage('Checkout') {
       steps { checkout scm }
     }
 
+    // ===== API TESTS (POSTMAN/NEWMAN) =====
     stage('Install Newman') {
       steps {
         sh 'npm install -g newman newman-reporter-htmlextra'
@@ -31,6 +33,29 @@ pipeline {
           reportDir: 'reports',
           reportFiles: 'api_report.html',
           reportName: 'API Test Report',
+          keepAll: true
+        ])
+      }
+    }
+
+    // ===== UI TESTS (PLAYWRIGHT) =====
+    stage('UI Tests (Playwright)') {
+      steps {
+        sh '''
+          cd tests/ui
+          npm ci || npm install
+          npx playwright install chromium
+          npx playwright test --reporter=html
+        '''
+      }
+    }
+
+    stage('Publish UI Report') {
+      steps {
+        publishHTML(target: [
+          reportDir: 'tests/ui/playwright-report',
+          reportFiles: 'index.html',
+          reportName: 'UI Test Report',
           keepAll: true
         ])
       }
