@@ -1,9 +1,10 @@
 {
-  "name":"ui-tests",
-  "devDependencies":{
-    "@playwright/test":"latest"
+  "name": "ui-tests",
+  "private": true,
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
   },
-  "scripts":{
-    "test":"playwright test"
+  "scripts": {
+    "test": "playwright test --reporter=html"
   }
 }
