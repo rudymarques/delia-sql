@@ -40,25 +40,27 @@ pipeline {
 
     // ===== UI TESTS (PLAYWRIGHT) =====
     stage('UI Tests (Playwright)') {
-      steps {
-        sh '''
-          cd tests/ui
-          npm ci || npm install
-          npx playwright install chromium
-          npx playwright test --reporter=html
-        '''
-      }
+  steps {
+    dir('tests/ui') {
+      // installe les deps; si pas de lock, bascule proprement sur npm install
+      sh 'npm ci || npm install'
+      // installe Chromium + deps système au besoin (idempotent)
+      sh 'npx playwright install --with-deps chromium || true'
+      // lance les tests et génère le rapport HTML dans tests/ui/playwright-report
+      sh 'npx playwright test --reporter=html'
     }
+  }
+}
 
-    stage('Publish UI Report') {
-      steps {
-        publishHTML(target: [
-          reportDir: 'tests/ui/playwright-report',
-          reportFiles: 'index.html',
-          reportName: 'UI Test Report',
-          keepAll: true
-        ])
-      }
-    }
+stage('Publish UI Report') {
+  steps {
+    publishHTML(target: [
+      reportDir: 'tests/ui/playwright-report',
+      reportFiles: 'index.html',
+      reportName: 'UI Test Report',
+      keepAll: true,
+      alwaysLinkToLastBuild: true,
+      allowMissing: false
+    ])
   }
 }
