@@ -1,7 +1,7 @@
 pipeline {
   agent any
   options { ansiColor('xterm'); timestamps() }
-  tools { nodejs 'node18-lts' } // Doit correspondre au nom configuré dans Jenkins
+  tools { nodejs 'node18-lts' } // doit matcher le nom défini dans Manage Jenkins > Tools
 
   stages {
     stage('Checkout') {
@@ -25,7 +25,7 @@ pipeline {
       }
     }
 
-    stage('Publish Report') {
+    stage('Publish API Report') {
       steps {
         publishHTML(target: [
           reportDir: 'reports',
