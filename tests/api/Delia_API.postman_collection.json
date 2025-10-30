@@ -1,12 +1,12 @@
 {
   "info": {
-    "name": "Delia API (demo)",
-    "_postman_id": "demo-collection",
+    "name": "Delia API - Demo",
+    "_postman_id": "delia-demo-collection",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Echo GET",
+      "name": "GET echo with query",
       "request": {
         "method": "GET",
         "url": {
@@ -14,10 +14,49 @@
           "protocol": "https",
           "host": ["postman-echo","com"],
           "path": ["get"],
-          "query": [{"key": "foo","value": "bar"}]
+          "query": [{"key":"foo","value":"bar"}]
         }
       },
-      "response": []
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Status code is 200', function () {",
+            "  pm.response.to.have.status(200);",
+            "});",
+            "const json = pm.response.json();",
+            "pm.test('Query param echoed', function () {",
+            "  pm.expect(json.args.foo).to.eql('bar');",
+            "});"
+          ],
+          "type": "text/javascript"
+        }
+      }]
+    },
+    {
+      "name": "POST echo JSON",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "url": "https://postman-echo.com/post",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"product\":\"chips-ananas\",\"qty\":3}"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const json = pm.response.json();",
+            "pm.test('Body echoed contains product', () => {",
+            "  pm.expect(json.data).to.include('chips-ananas');",
+            "});"
+          ],
+          "type": "text/javascript"
+        }
+      }]
     }
   ]
 }
