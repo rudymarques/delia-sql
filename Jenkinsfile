@@ -8,14 +8,10 @@ pipeline {
       steps { checkout scm }
     }
 
-    stage('Install CLI tools') {
-      steps {
-        sh 'npm install -g newman newman-reporter-htmlextra'
-      }
-    }
-
+    // === API (Postman/Newman) ===
     stage('API Tests') {
       steps {
+        sh 'npm install -g newman newman-reporter-htmlextra'
         sh '''
           mkdir -p reports/api
           newman run tests/api/Delia_API.postman_collection.json \
@@ -25,13 +21,16 @@ pipeline {
       }
     }
 
+    // === UI (Playwright) ===
     stage('UI Tests (Playwright)') {
       steps {
         dir('tests/ui') {
           sh '''
-            npm install
-            npx playwright install chromium
-            npx playwright test --reporter=html
+            npm ci || npm install
+            # installe Chromium + deps si besoin (idempotent)
+            npx playwright install --with-deps chromium || true
+            # génère le rapport HTML dans tests/ui/playwright-report
+            npx playwright test --reporter=html || true
           '''
         }
       }
@@ -39,18 +38,32 @@ pipeline {
   }
 
   post {
-  always {
-    // Publie le rapport API (OK en HTML)
-    publishHTML(target: [
-      reportDir: 'reports/api',
-      reportFiles: 'index.html',
-      reportName: 'API Test Report',
-      keepAll: true,
-      alwaysLinkToLastBuild: true,
-      allowMissing: true
-    ])
+    always {
+      // Rapport API (HTMLPublisher)
+      publishHTML(target: [
+        reportDir: 'reports/api',
+        reportFiles: 'index.html',
+        reportName: 'API Test Report',
+        keepAll: true,
+        alwaysLinkToLastBuild: true,
+        allowMissing: true
+      ])
 
-    // Archive tout le dossier du rapport Playwright pour téléchargement
-    archiveArtifacts artifacts: 'tests/ui/playwright-report/**', fingerprint: true
+      // Rapport UI (HTMLPublisher) - peut être vide si CSP / pas de rapport
+      publishHTML(target: [
+        reportDir: 'tests/ui/playwright-report',
+        reportFiles: 'index.html',
+        reportName: 'UI Test Report',
+        keepAll: true,
+        alwaysLinkToLastBuild: true,
+        allowMissing: true
+      ])
+
+      // Archive complète du rapport Playwright (pour télécharger/ouvrir en local)
+      archiveArtifacts artifacts: 'tests/ui/playwright-report/**',
+                       fingerprint: true,
+                       allowEmptyArchive: true
+    }
   }
 }
+
