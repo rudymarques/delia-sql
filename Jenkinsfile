@@ -1,7 +1,6 @@
 pipeline {
   agent any
   options { ansiColor('xterm'); timestamps() }
-  // Le nom doit correspondre à l'outil Node configuré dans Jenkins > Manage Jenkins > Tools
   tools { nodejs 'node18-lts' }
 
   stages {
@@ -9,58 +8,54 @@ pipeline {
       steps { checkout scm }
     }
 
-    // ===== API TESTS (POSTMAN/NEWMAN) =====
-    stage('Install Newman') {
+    stage('Install CLI tools') {
       steps {
         sh 'npm install -g newman newman-reporter-htmlextra'
       }
     }
 
-    stage('Run API Tests') {
+    stage('API Tests') {
       steps {
         sh '''
-          mkdir -p reports
+          mkdir -p reports/api
           newman run tests/api/Delia_API.postman_collection.json \
             --reporters cli,htmlextra \
-            --reporter-htmlextra-export reports/api_report.html
+            --reporter-htmlextra-export reports/api/index.html
         '''
       }
     }
 
-    stage('Publish API Report') {
+    stage('UI Tests (Playwright)') {
       steps {
-        publishHTML(target: [
-          reportDir: 'reports',
-          reportFiles: 'api_report.html',
-          reportName: 'API Test Report',
-          keepAll: true
-        ])
+        dir('tests/ui') {
+          sh '''
+            npm install
+            npx playwright install chromium
+            npx playwright test --reporter=html
+          '''
+        }
       }
     }
-
-    // ===== UI TESTS (PLAYWRIGHT) =====
-    stage('UI Tests (Playwright)') {
-  steps {
-    dir('tests/ui') {
-      // installe les deps; si pas de lock, bascule proprement sur npm install
-      sh 'npm ci || npm install'
-      // installe Chromium + deps système au besoin (idempotent)
-      sh 'npx playwright install --with-deps chromium || true'
-      // lance les tests et génère le rapport HTML dans tests/ui/playwright-report
-      sh 'npx playwright test --reporter=html'
-    }
   }
-}
 
-stage('Publish UI Report') {
-  steps {
-    publishHTML(target: [
-      reportDir: 'tests/ui/playwright-report',
-      reportFiles: 'index.html',
-      reportName: 'UI Test Report',
-      keepAll: true,
-      alwaysLinkToLastBuild: true,
-      allowMissing: false
-    ])
+  post {
+    always {
+      publishHTML(target: [
+        reportDir: 'reports/api',
+        reportFiles: 'index.html',
+        reportName: 'API Test Report',
+        keepAll: true,
+        alwaysLinkToLastBuild: true,
+        allowMissing: true
+      ])
+      publishHTML(target: [
+        reportDir: 'tests/ui/playwright-report',
+        reportFiles: 'index.html',
+        reportName: 'UI Test Report',
+        keepAll: true,
+        alwaysLinkToLastBuild: true,
+        allowMissing: true
+      ])
+    }
   }
 }
