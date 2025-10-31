@@ -39,23 +39,18 @@ pipeline {
   }
 
   post {
-    always {
-      publishHTML(target: [
-        reportDir: 'reports/api',
-        reportFiles: 'index.html',
-        reportName: 'API Test Report',
-        keepAll: true,
-        alwaysLinkToLastBuild: true,
-        allowMissing: true
-      ])
-      publishHTML(target: [
-        reportDir: 'tests/ui/playwright-report',
-        reportFiles: 'index.html',
-        reportName: 'UI Test Report',
-        keepAll: true,
-        alwaysLinkToLastBuild: true,
-        allowMissing: true
-      ])
-    }
+  always {
+    // Publie le rapport API (OK en HTML)
+    publishHTML(target: [
+      reportDir: 'reports/api',
+      reportFiles: 'index.html',
+      reportName: 'API Test Report',
+      keepAll: true,
+      alwaysLinkToLastBuild: true,
+      allowMissing: true
+    ])
+
+    // Archive tout le dossier du rapport Playwright pour téléchargement
+    archiveArtifacts artifacts: 'tests/ui/playwright-report/**', fingerprint: true
   }
 }
