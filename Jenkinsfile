@@ -65,5 +65,14 @@ pipeline {
                        allowEmptyArchive: true
     }
   }
+stage('DB Check (SQLite)') {
+  steps {
+    sh '''
+      npm init -y >/dev/null 2>&1 || true
+      npm install sqlite3 --silent
+      node db-check.js
+    '''
+  }
 }
+
 
