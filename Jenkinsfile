@@ -27,19 +27,28 @@ pipeline {
         dir('tests/ui') {
           sh '''
             npm ci || npm install
-            # installe Chromium + deps si besoin (idempotent)
-            npx playwright install --with-deps chromium || true
-            # génère le rapport HTML dans tests/ui/playwright-report
+            npx playwright install chromium || true
             npx playwright test --reporter=html || true
           '''
         }
+      }
+    }
+
+    // === DB (SQLite) ===
+    stage('DB Check (SQLite)') {
+      steps {
+        sh '''
+          npm init -y >/dev/null 2>&1 || true
+          npm install sqlite3 --silent
+          node db-check.js
+        '''
       }
     }
   }
 
   post {
     always {
-      // Rapport API (HTMLPublisher)
+      // Rapport API
       publishHTML(target: [
         reportDir: 'reports/api',
         reportFiles: 'index.html',
@@ -49,7 +58,7 @@ pipeline {
         allowMissing: true
       ])
 
-      // Rapport UI (HTMLPublisher) - peut être vide si CSP / pas de rapport
+      // Rapport UI (peut être vide si le run a été noop)
       publishHTML(target: [
         reportDir: 'tests/ui/playwright-report',
         reportFiles: 'index.html',
@@ -59,19 +68,11 @@ pipeline {
         allowMissing: true
       ])
 
-      // Archive complète du rapport Playwright (pour télécharger/ouvrir en local)
+      // Archive du rapport Playwright
       archiveArtifacts artifacts: 'tests/ui/playwright-report/**',
                        fingerprint: true,
                        allowEmptyArchive: true
     }
-  }
-stage('DB Check (SQLite)') {
-  steps {
-    sh '''
-      npm init -y >/dev/null 2>&1 || true
-      npm install sqlite3 --silent
-      node db-check.js
-    '''
   }
 }
 
